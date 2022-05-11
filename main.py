@@ -31,15 +31,15 @@ class Board:
         pygame.display.set_caption("Chess")
     
     def drawBoard(self):
-        global WIDTH, HEIGHT
-        WIDTH, HEIGHT = min(WINDOW.get_size()), min(WINDOW.get_size())
-        self.offsetX, self.offsetY = WINDOW.get_size()[0] - WIDTH, WINDOW.get_size()[1] - HEIGHT
+        global minSize
+        minSize = min(WINDOW.get_size())
+        self.offsetX, self.offsetY = WINDOW.get_size()[0] - minSize, WINDOW.get_size()[1] - minSize
         for x in range(0, 8):
             for y in range(0, 8):
                 if (x + y) % 2 == 0: 
-                    pygame.draw.rect(WINDOW, WHITE, pygame.Rect(self.offsetX/2 + x*WIDTH/8, self.offsetY/2 + y*HEIGHT/8, WIDTH/8, HEIGHT/8))
+                    pygame.draw.rect(WINDOW, WHITE, pygame.Rect(self.offsetX / 2 + x * minSize / 8, self.offsetY / 2 + y*minSize/8, minSize/8, minSize/8))
                 elif (x + y) % 2 == 1:
-                    pygame.draw.rect(WINDOW, BLACK, pygame.Rect(self.offsetX/2 + x*WIDTH/8, self.offsetY/2 + y*HEIGHT/8, WIDTH/8, HEIGHT/8))
+                    pygame.draw.rect(WINDOW, BLACK, pygame.Rect(self.offsetX / 2 + x * minSize / 8, self.offsetY / 2 + y*minSize/8, minSize/8, minSize/8))
         pygame.display.flip()
 
     def drawPieces(self, position, redecodePosition):
@@ -54,29 +54,29 @@ class Board:
                 if piece == " ":
                     pass
                 elif piece == "P":
-                    WINDOW.blit(pygame.transform.smoothscale(whitePawn, (WIDTH / 8, WIDTH / 8)), (self.offsetX / 2 + index * WIDTH / 8, self.offsetY / 2 + column * HEIGHT / 8))
+                    WINDOW.blit(pygame.transform.smoothscale(whitePawn, (minSize / 8, minSize / 8)), (self.offsetX / 2 + index * minSize / 8, self.offsetY / 2 + column * minSize / 8))
                 elif piece == "R":
-                    WINDOW.blit(pygame.transform.smoothscale(whiteRook, (WIDTH / 8, WIDTH / 8)), (self.offsetX / 2 + index * WIDTH / 8, self.offsetY / 2 + column * HEIGHT / 8))
+                    WINDOW.blit(pygame.transform.smoothscale(whiteRook, (minSize / 8, minSize / 8)), (self.offsetX / 2 + index * minSize / 8, self.offsetY / 2 + column * minSize / 8))
                 elif piece == "N":
-                    WINDOW.blit(pygame.transform.smoothscale(whiteKnight, (WIDTH / 8, WIDTH / 8)), (self.offsetX / 2 + index * WIDTH / 8, self.offsetY / 2 + column * HEIGHT / 8))
+                    WINDOW.blit(pygame.transform.smoothscale(whiteKnight, (minSize / 8, minSize / 8)), (self.offsetX / 2 + index * minSize / 8, self.offsetY / 2 + column * minSize / 8))
                 elif piece == "B":
-                    WINDOW.blit(pygame.transform.smoothscale(whiteBishop, (WIDTH / 8, WIDTH / 8)), (self.offsetX / 2 + index * WIDTH / 8, self.offsetY / 2 + column * HEIGHT / 8))
+                    WINDOW.blit(pygame.transform.smoothscale(whiteBishop, (minSize / 8, minSize / 8)), (self.offsetX / 2 + index * minSize / 8, self.offsetY / 2 + column * minSize / 8))
                 elif piece == "Q":
-                    WINDOW.blit(pygame.transform.smoothscale(whiteQueen, (WIDTH / 8, WIDTH / 8)), (self.offsetX / 2 + index * WIDTH / 8, self.offsetY / 2 + column * HEIGHT / 8))
+                    WINDOW.blit(pygame.transform.smoothscale(whiteQueen, (minSize / 8, minSize / 8)), (self.offsetX / 2 + index * minSize / 8, self.offsetY / 2 + column * minSize / 8))
                 elif piece == "K":
-                    WINDOW.blit(pygame.transform.smoothscale(whiteKing, (WIDTH / 8, WIDTH / 8)), (self.offsetX / 2 + index * WIDTH / 8, self.offsetY / 2 + column * HEIGHT / 8))
+                    WINDOW.blit(pygame.transform.smoothscale(whiteKing, (minSize / 8, minSize / 8)), (self.offsetX / 2 + index * minSize / 8, self.offsetY / 2 + column * minSize / 8))
                 elif piece == "p":
-                    WINDOW.blit(pygame.transform.smoothscale(blackPawn, (WIDTH / 8, WIDTH / 8)), (self.offsetX / 2 + index * WIDTH / 8, self.offsetY / 2 + column * HEIGHT / 8))
+                    WINDOW.blit(pygame.transform.smoothscale(blackPawn, (minSize / 8, minSize / 8)), (self.offsetX / 2 + index * minSize / 8, self.offsetY / 2 + column * minSize / 8))
                 elif piece == "r":
-                    WINDOW.blit(pygame.transform.smoothscale(blackRook, (WIDTH / 8, WIDTH / 8)), (self.offsetX / 2 + index * WIDTH / 8, self.offsetY / 2 + column * HEIGHT / 8))
+                    WINDOW.blit(pygame.transform.smoothscale(blackRook, (minSize / 8, minSize / 8)), (self.offsetX / 2 + index * minSize / 8, self.offsetY / 2 + column * minSize / 8))
                 elif piece == "n":
-                    WINDOW.blit(pygame.transform.smoothscale(blackKnight, (WIDTH / 8, WIDTH / 8)), (self.offsetX / 2 + index * WIDTH / 8, self.offsetY / 2 + column * HEIGHT / 8))
+                    WINDOW.blit(pygame.transform.smoothscale(blackKnight, (minSize / 8, minSize / 8)), (self.offsetX / 2 + index * minSize / 8, self.offsetY / 2 + column * minSize / 8))
                 elif piece == "b":
-                    WINDOW.blit(pygame.transform.smoothscale(blackBishop, (WIDTH / 8, WIDTH / 8)), (self.offsetX / 2 + index * WIDTH / 8, self.offsetY / 2 + column * HEIGHT / 8))
+                    WINDOW.blit(pygame.transform.smoothscale(blackBishop, (minSize / 8, minSize / 8)), (self.offsetX / 2 + index * minSize / 8, self.offsetY / 2 + column * minSize / 8))
                 elif piece == "q":
-                    WINDOW.blit(pygame.transform.smoothscale(blackQueen, (WIDTH / 8, WIDTH / 8)), (self.offsetX / 2 + index * WIDTH / 8, self.offsetY / 2 + column * HEIGHT / 8))
+                    WINDOW.blit(pygame.transform.smoothscale(blackQueen, (minSize / 8, minSize / 8)), (self.offsetX / 2 + index * minSize / 8, self.offsetY / 2 + column * minSize / 8))
                 elif piece == "k":
-                    WINDOW.blit(pygame.transform.smoothscale(blackKing, (WIDTH / 8, WIDTH / 8)), (self.offsetX / 2 + index * WIDTH / 8, self.offsetY / 2 + column * HEIGHT / 8))
+                    WINDOW.blit(pygame.transform.smoothscale(blackKing, (minSize / 8, minSize / 8)), (self.offsetX / 2 + index * minSize / 8, self.offsetY / 2 + column * minSize / 8))
 
         pygame.display.flip()
 
@@ -95,6 +95,12 @@ class Board:
                         row.insert(k + j, " ")
         return pieceList2d, position[-5::1]
 
+    def getSquare(self, mousePosition):
+        reducedX, reducedY = floor(mousePosition)
+
+    def select(self, mousePosition):
+        pygame.draw
+
 def main():
     BOARD = Board()
     BOARD.drawBoard()
@@ -111,6 +117,11 @@ def main():
             if event.type == pygame.VIDEORESIZE:
                 BOARD.drawBoard()
                 BOARD.drawPieces(START_POSITION, False)
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mousePosition = pygame.mouse.get_pos()
+                square = BOARD.getSquare(mousePosition)
+                BOARD.select(mousePosition)
+
 
 if __name__ == '__main__':
     main()
