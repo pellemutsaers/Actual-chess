@@ -2,6 +2,7 @@ import pygame
 from pygame.locals import *
 import math
 from functools import cache
+import time
 
 WIDTH, HEIGHT = 800, 800
 WHITE, BLACK = (235, 210, 180), (115, 85, 70)
@@ -10,6 +11,7 @@ START_POSITION = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 offsetX, offsetY = 0, 0
 squareSize = 100
 pieceList2d = []
+Clock = pygame.time.Clock()
 
 #! Pieces
 blackRook = pygame.image.load("Chess pieces/black-rook.png")
@@ -132,6 +134,46 @@ def redrawSquare(square):
         pygame.draw.rect(WINDOW, BLACK, pygame.Rect(
             square[0] * squareSize + offsetX / 2, square[1] * squareSize + offsetY / 2, squareSize, squareSize))
 
+def redrawPiece(piece, square):
+    if piece == " ":
+        pass
+    elif piece == "P":
+        WINDOW.blit(pygame.transform.smoothscale(whitePawn, (squareSize, squareSize)),
+                    (offsetX / 2 + square[0] * squareSize, offsetY / 2 + square[1] * squareSize))
+    elif piece == "R":
+        WINDOW.blit(pygame.transform.smoothscale(whiteRook, (squareSize, squareSize)),
+                    (offsetX / 2 + square[0] * squareSize, offsetY / 2 + square[1] * squareSize))
+    elif piece == "N":
+        WINDOW.blit(pygame.transform.smoothscale(whiteKnight, (squareSize, squareSize)),
+                    (offsetX / 2 + square[0] * squareSize, offsetY / 2 + square[1] * squareSize))
+    elif piece == "B":
+        WINDOW.blit(pygame.transform.smoothscale(whiteBishop, (squareSize, squareSize)),
+                    (offsetX / 2 + square[0] * squareSize, offsetY / 2 + square[1] * squareSize))
+    elif piece == "Q":
+        WINDOW.blit(pygame.transform.smoothscale(whiteQueen, (squareSize, squareSize)),
+                    (offsetX / 2 + square[0] * squareSize, offsetY / 2 + square[1] * squareSize))
+    elif piece == "K":
+        WINDOW.blit(pygame.transform.smoothscale(whiteKing, (squareSize, squareSize)),
+                    (offsetX / 2 + square[0] * squareSize, offsetY / 2 + square[1] * squareSize))
+    elif piece == "p":
+        WINDOW.blit(pygame.transform.smoothscale(blackPawn, (squareSize, squareSize)),
+                    (offsetX / 2 + square[0] * squareSize, offsetY / 2 + square[1] * squareSize))
+    elif piece == "r":
+        WINDOW.blit(pygame.transform.smoothscale(blackRook, (squareSize, squareSize)),
+                    (offsetX / 2 + square[0] * squareSize, offsetY / 2 + square[1] * squareSize))
+    elif piece == "n":
+        WINDOW.blit(pygame.transform.smoothscale(blackKnight, (squareSize, squareSize)),
+                    (offsetX / 2 + square[0] * squareSize, offsetY / 2 + square[1] * squareSize))
+    elif piece == "b":
+        WINDOW.blit(pygame.transform.smoothscale(blackBishop, (squareSize, squareSize)),
+                    (offsetX / 2 + square[0] * squareSize, offsetY / 2 + square[1] * squareSize))
+    elif piece == "q":
+        WINDOW.blit(pygame.transform.smoothscale(blackQueen, (squareSize, squareSize)),
+                    (offsetX / 2 + square[0] * squareSize, offsetY / 2 + square[1] * squareSize))
+    elif piece == "k":
+        WINDOW.blit(pygame.transform.smoothscale(blackKing, (squareSize, squareSize)),
+                    (offsetX / 2 + square[0] * squareSize, offsetY / 2 + square[1] * squareSize))
+
 def main():
     global pieceList2d
     currentPosition = START_POSITION
@@ -142,6 +184,7 @@ def main():
     verification = True
 
     while running:
+        Clock.tick(15)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -156,11 +199,12 @@ def main():
             elif not verification and event.type == pygame.MOUSEBUTTONUP:
                 square2 = getMouseSquare(pygame.mouse.get_pos())
                 if square1 != square2:
-                    pieceList2d[square2[1]][square2[0]] = pieceList2d[square1[1]][square1[0]]
+                    piece = pieceList2d[square1[1]][square1[0]]
+                    pieceList2d[square2[1]][square2[0]] = piece
                     pieceList2d[square1[1]][square1[0]] = " "
                     redrawSquare(square1)
                     redrawSquare(square2)
-                    drawPieces()
+                    redrawPiece(piece, square2)
                     pygame.display.flip()
                 verification = True
 
