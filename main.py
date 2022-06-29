@@ -4,10 +4,12 @@ import math
 from functools import cache
 
 WIDTH, HEIGHT = 800, 800
-WHITE, BLACK, SELECTED = (235, 210, 180), (115, 85, 70), (0, 120, 100)
+WHITE, BLACK = (235, 210, 180), (115, 85, 70)
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
 START_POSITION = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 offsetX, offsetY = 0, 0
+squareSize = 100
+pieceList2d = []
 
 #! Pieces
 blackRook = pygame.image.load("Chess pieces/black-rook.png")
@@ -61,51 +63,46 @@ def getPieceList(position, redecodePosition):
         pieceList2d, settings = makePieceList(position)
 
 def drawPieces():
-    global pieceList2d
     for column, row in enumerate(pieceList2d):
         for index, piece in enumerate(row):
-            drawThePiece(piece, index, column)
-
-@cache
-def drawThePiece(piece, index, column):
-    if piece == " ":
-        pass
-    elif piece == "P":
-        WINDOW.blit(pygame.transform.smoothscale(whitePawn, (squareSize, squareSize)),
-                    (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
-    elif piece == "R":
-        WINDOW.blit(pygame.transform.smoothscale(whiteRook, (squareSize, squareSize)),
-                    (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
-    elif piece == "N":
-        WINDOW.blit(pygame.transform.smoothscale(whiteKnight, (squareSize, squareSize)),
-                    (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
-    elif piece == "B":
-        WINDOW.blit(pygame.transform.smoothscale(whiteBishop, (squareSize, squareSize)),
-                    (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
-    elif piece == "Q":
-        WINDOW.blit(pygame.transform.smoothscale(whiteQueen, (squareSize, squareSize)),
-                    (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
-    elif piece == "K":
-        WINDOW.blit(pygame.transform.smoothscale(whiteKing, (squareSize, squareSize)),
-                    (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
-    elif piece == "p":
-        WINDOW.blit(pygame.transform.smoothscale(blackPawn, (squareSize, squareSize)),
-                    (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
-    elif piece == "r":
-        WINDOW.blit(pygame.transform.smoothscale(blackRook, (squareSize, squareSize)),
-                    (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
-    elif piece == "n":
-        WINDOW.blit(pygame.transform.smoothscale(blackKnight, (squareSize, squareSize)),
-                    (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
-    elif piece == "b":
-        WINDOW.blit(pygame.transform.smoothscale(blackBishop, (squareSize, squareSize)),
-                    (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
-    elif piece == "q":
-        WINDOW.blit(pygame.transform.smoothscale(blackQueen, (squareSize, squareSize)),
-                    (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
-    elif piece == "k":
-        WINDOW.blit(pygame.transform.smoothscale(blackKing, (squareSize, squareSize)),
-                    (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
+            if piece == " ":
+                pass
+            elif piece == "P":
+                WINDOW.blit(pygame.transform.smoothscale(whitePawn, (squareSize, squareSize)),
+                            (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
+            elif piece == "R":
+                WINDOW.blit(pygame.transform.smoothscale(whiteRook, (squareSize, squareSize)),
+                            (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
+            elif piece == "N":
+                WINDOW.blit(pygame.transform.smoothscale(whiteKnight, (squareSize, squareSize)),
+                            (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
+            elif piece == "B":
+                WINDOW.blit(pygame.transform.smoothscale(whiteBishop, (squareSize, squareSize)),
+                            (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
+            elif piece == "Q":
+                WINDOW.blit(pygame.transform.smoothscale(whiteQueen, (squareSize, squareSize)),
+                            (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
+            elif piece == "K":
+                WINDOW.blit(pygame.transform.smoothscale(whiteKing, (squareSize, squareSize)),
+                            (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
+            elif piece == "p":
+                WINDOW.blit(pygame.transform.smoothscale(blackPawn, (squareSize, squareSize)),
+                            (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
+            elif piece == "r":
+                WINDOW.blit(pygame.transform.smoothscale(blackRook, (squareSize, squareSize)),
+                            (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
+            elif piece == "n":
+                WINDOW.blit(pygame.transform.smoothscale(blackKnight, (squareSize, squareSize)),
+                            (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
+            elif piece == "b":
+                WINDOW.blit(pygame.transform.smoothscale(blackBishop, (squareSize, squareSize)),
+                            (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
+            elif piece == "q":
+                WINDOW.blit(pygame.transform.smoothscale(blackQueen, (squareSize, squareSize)),
+                            (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
+            elif piece == "k":
+                WINDOW.blit(pygame.transform.smoothscale(blackKing, (squareSize, squareSize)),
+                            (offsetX / 2 + index * squareSize, offsetY / 2 + column * squareSize))
 
 def makePieceList(position):
     global pieceList2d
