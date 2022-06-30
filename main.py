@@ -1,6 +1,7 @@
 import pygame
 from pygame.locals import *
 import math
+import chess
 
 WIDTH, HEIGHT = 800, 800
 WHITE, BLACK = (235, 210, 180), (115, 85, 70)
@@ -9,7 +10,8 @@ START_POSITION = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 offsetX, offsetY = 0, 0
 squareSize = 100
 pieceList2d = []
-Clock = pygame.time.Clock()
+clock = pygame.time.Clock()
+board = chess.Board(START_POSITION)
 
 #! Pieces
 blackRook = pygame.image.load("Chess pieces/black-rook.png")
@@ -122,7 +124,7 @@ def makePieceList(position):
 def getMouseSquare(mousePosition):
     row = math.floor((mousePosition[0] - offsetX / 2) / (squareSize))
     column = math.floor((mousePosition[1] - offsetY / 2) / (squareSize))
-    return (row, column)
+    return [row, column]
 
 def redrawSquare(square):
     if (square[0] + square[1]) % 2 == 0:
@@ -188,7 +190,11 @@ def handlePromotion(square2, move, square1):
     else:
         print("Error!")
         handlePromotion(square2, move, square1)
-    
+
+def getMoveNotation(square1, square2):
+    row1, column1, row2, column2 = chr(97 + square1[0]), str(8 - square1[1]), chr(97 + square2[0]), str(8 - square2[1])
+    return row1 + column1 + row2 + column2
+
 def main():
     global pieceList2d
     currentPosition = START_POSITION
@@ -197,12 +203,10 @@ def main():
     resetBoard()
     running = True
     verification = True
-    move = 0
-
-    #TODO Implement chess module to keep track of positions.
+    movecount = 0
 
     while running:
-        Clock.tick(15)
+        clock.tick(15)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -217,24 +221,22 @@ def main():
             elif not verification and event.type == pygame.MOUSEBUTTONUP:
                 square2 = getMouseSquare(pygame.mouse.get_pos())
                 piece = pieceList2d[square1[1]][square1[0]]
-
-                #TODO get long chess notation to check if the move is legal.
-                #TODO check if move is legal.
+                move = getMoveNotation(square1, square2)
                     
-                if square1 != square2:
-                    if piece.islower() and move % 2 == 1 or piece.isupper() and move % 2 == 0:
-                        pieceList2d[square2[1]][square2[0]] = piece
-                        pieceList2d[square1[1]][square1[0]] = " "
-                        if "P" in pieceList2d[0]:
-                            handlePromotion(square2, move, square1)
-                        elif "p" in pieceList2d[7]:
-                            handlePromotion(square2, move, square1)
-                        else:
-                            redrawSquare(square1)
-                            redrawSquare(square2)
-                            redrawPiece(piece, square2)
-                        pygame.display.flip()
-                        move += 1
+                if chess.Move.from_uci(move) in board.legal_moves:
+                    pieceList2d[square2[1]][square2[0]] = piece
+                    pieceList2d[square1[1]][square1[0]] = " "
+                    if "P" in pieceList2d[0]:
+                        handlePromotion(square2, move, square1)
+                    elif "p" in pieceList2d[7]:
+                        handlePromotion(square2, move, square1)
+                    else:
+                        redrawSquare(square1)
+                        redrawSquare(square2)
+                        redrawPiece(piece, square2)
+                    board.push_uci(move)
+                    pygame.display.flip()
+                    movecount += 1
                 verification = True
 
 if __name__ == '__main__':
