@@ -133,6 +133,7 @@ def redrawSquare(square):
     else:
         pygame.draw.rect(WINDOW, BLACK, pygame.Rect(
             square[0] * squareSize + offsetX / 2, square[1] * squareSize + offsetY / 2, squareSize, squareSize))
+    pygame.display.flip()
 
 def redrawPiece(piece, square):
     if piece == " ":
@@ -174,22 +175,27 @@ def redrawPiece(piece, square):
         WINDOW.blit(pygame.transform.smoothscale(blackKing, (squareSize, squareSize)),
                     (offsetX / 2 + square[0] * squareSize, offsetY / 2 + square[1] * squareSize))
 
-def handlePromotion(square2, move, square1):
+def handlePromotion(square1, moveCount, square2):
     global pieceList2d
     target = input("What piece do you want to promote to? (Q/R/B/N): ")
-    if move % 2 == 1 and target in "QRBNqrbn":
+    if moveCount % 2 == 1 and target in "QRBNqrbn":
         pieceList2d[square2[1]][square2[0]] = target.lower()
-        redrawSquare(square2)
+        pieceList2d[square1[1]][square1[0]] = " "
         redrawSquare(square1)
+        redrawSquare(square2)
         redrawPiece(target.lower(), square2)
-    elif move % 2 == 0 and target in "QRBNqrbn":
+        return target.lower()
+    elif moveCount % 2 == 0 and target in "QRBNqrbn":
         pieceList2d[square2[1]][square2[0]] = target.upper()
-        redrawSquare(square2)
+        pieceList2d[square1[1]][square1[0]] = " "
         redrawSquare(square1)
+        redrawSquare(square2)
         redrawPiece(target.upper(), square2)
+        return target.lower()
     else:
         print("Error!")
-        handlePromotion(square2, move, square1)
+        handlePromotion(square2, moveCount, square1)
+
 
 def getMoveNotation(square1, square2):
     row1, column1, row2, column2 = chr(97 + square1[0]), str(8 - square1[1]), chr(97 + square2[0]), str(8 - square2[1])
@@ -203,11 +209,12 @@ def main():
     resetBoard()
     running = True
     verification = True
-    movecount = 0
+    moveCount = 0
 
     while running:
-        clock.tick(15)
+        clock.tick(30)
         for event in pygame.event.get():
+            into = ""
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
@@ -221,22 +228,23 @@ def main():
             elif not verification and event.type == pygame.MOUSEBUTTONUP:
                 square2 = getMouseSquare(pygame.mouse.get_pos())
                 piece = pieceList2d[square1[1]][square1[0]]
-                move = getMoveNotation(square1, square2)
-                    
-                if chess.Move.from_uci(move) in board.legal_moves:
-                    pieceList2d[square2[1]][square2[0]] = piece
-                    pieceList2d[square1[1]][square1[0]] = " "
-                    if "P" in pieceList2d[0]:
-                        handlePromotion(square2, move, square1)
-                    elif "p" in pieceList2d[7]:
-                        handlePromotion(square2, move, square1)
-                    else:
+                uciMove = getMoveNotation(square1, square2)
+
+                if (piece == "p" and square1[1] == 6) or (piece == "P" and square1[1] == 1):
+                    promotion = handlePromotion(square1, moveCount, square2)
+                    board.push_uci(uciMove + promotion)
+                    moveCount += 1
+
+                elif square1 != square2:
+                    if chess.Move.from_uci(uciMove) in board.legal_moves:
+                        pieceList2d[square2[1]][square2[0]] = piece
+                        pieceList2d[square1[1]][square1[0]] = " "
                         redrawSquare(square1)
                         redrawSquare(square2)
                         redrawPiece(piece, square2)
-                    board.push_uci(move)
-                    pygame.display.flip()
-                    movecount += 1
+                        board.push_uci(uciMove)
+                        pygame.display.flip()
+                        moveCount += 1
                 verification = True
 
 if __name__ == '__main__':
