@@ -3,11 +3,11 @@ import chess
 import pygame, pygame.locals
 import math
 
-#* If statement for cleanliness in vscode
+#* If statement for cleanliness in vscode.
 if True:
     pygame.init()
     window = pygame.display.set_mode([480,480])
-    board = chess.Board()
+    board = chess.Board("3k4/1Q6/5K2/8/8/8/8/8 w - - 0 1")
     legal_moves = board.legal_moves
     analyzed = 0
     analyzed_final = 0
@@ -16,7 +16,7 @@ if True:
     white = (235, 210, 180)
     square_size = 80
 
-    black_is_computer = True
+    black_is_computer = False
     white_is_computer = True
 
     white_pawn = pygame.image.load("PNG's/white-pawn.png")
@@ -79,8 +79,7 @@ def draw_pieces():
     pygame.display.flip()
 
 def create_list():
-    list = str(board).replace(" ", "").split("\n")
-    return list
+    return str(board).replace(" ", "").split("\n") 
 
 def return_mouse_square(pos):
     part1 = chr(97 + math.floor(pos[0]/60))
@@ -88,22 +87,22 @@ def return_mouse_square(pos):
     return part1 + part2
 
 #* First attempt at getting the enemy king closer to the edge of the board, for getting closer to checkmate in an endgame.
-def distanceFromCenter(row, column):
-    row -= 1
+def distance_from_center(row, column):
     distX = abs(4 - row)
     distY = abs(4 - column)
     distance = distX + distY
     return distance
 
-#* Is speeding this up possible, intelligence should be easily extendible.
+#* Is speeding this up possible?, intelligence should be easily extendible.
 def evaluate_position(move_count):
-    if board.is_checkmate():
-        if move_count % 2 == 0:
-            return -float("inf")
-        if move_count % 2 == 1:
+    if not legal_moves:
+        outcome = board.outcome().result()
+        if outcome == "1-0":
             return float("inf")
-    if board.is_stalemate():
-        return 0.0
+        elif outcome == "0-1":
+            return -float("inf")
+        else:
+            return 0.0
 
     global analyzed
     global analyzed_final
@@ -112,87 +111,86 @@ def evaluate_position(move_count):
     list = create_list()
     for column, string in enumerate(list):
         for index, char in enumerate(string):
+            column += 1
+            index += 1
             match char:
                 case "R":
-                    evaluation += 5
-                    if column <= 4:
-                        evaluation += 0.9 - 0.1*(column+1)
+                    evaluation += 50
+                    if column >= 3 or column == 1:
+                        evaluation += 8 - column
+                    else:
+                        evaluation += 10
 
                 case "K":
-                    if index < 3 or index > 6:
-                        evaluation += 1
-                    distance = distanceFromCenter(index, column)
-                    evaluation -= distance / 8
+                    if index <= 2 or index >= 7:
+                        evaluation += 10
+                    distance = distance_from_center(index, column)
+                    evaluation -= distance*move_count * 0.02
 
                 case "N":
-                    evaluation += 3
-                    evaluation += 0.9 - 0.1*(column+1)
+                    evaluation += 30
+                    evaluation += 8 - column
                     if index >= 3 or index <= 6:
-                        evaluation += 0.5
+                        evaluation += 5
 
                 case "B":
-                    evaluation += 3
-                    evaluation += 0.9 - 0.1*(column+1)
+                    evaluation += 30
+                    evaluation += 8 - column
 
                 case "Q":
-                    evaluation += 9
-                    if move_count > 10:
-                        evaluation += 0.9 - 0.1*(column+1)
+                    evaluation += 90
+                    if move_count > 5:
+                        evaluation += 8 - column
 
                 case "P":
-                    evaluation += 1
-                    evaluation += 0.9 - 0.1*(column + 1)
+                    evaluation += 10
+                    evaluation += 8 - column
 
                 case "r":
-                    evaluation -= 5
-                    if column >= 3:
-                        evaluation -= 0.1*(column+1)
+                    evaluation -= 50
+                    if column <= 6 or column == 8:
+                        evaluation -= column - 1
+                    else:
+                        evaluation -= 10
 
                 case "k":
-                    if index < 3 or index > 6:
-                        evaluation -= 1
-                    distance = distanceFromCenter(index, column)
-                    evaluation += distance / 8
+                    if index <= 2 or index >= 7:
+                        evaluation -= 10
+                    distance = distance_from_center(index, column)
+                    evaluation += distance * move_count * 0.02
 
                 case "n":
-                    evaluation -= 3
-                    evaluation -= 0.1*(column+1)
+                    evaluation -= 30
+                    evaluation -= column - 1
                     if index >= 3 or index <= 6:
-                        evaluation -= 0.5
-                
+                        evaluation -= 5
+
                 case "b":
-                    evaluation -= 3
-                    evaluation -= 0.1*(column+1)                
+                    evaluation -= 30
+                    evaluation -= column - 1
 
                 case "q":
-                    evaluation -= 9
-                    if move_count > 10:
-                        evaluation -= 0.1*(column+1)        
+                    evaluation -= 90
+                    if move_count > 5:
+                        evaluation -= column - 1
 
                 case "p":
-                    evaluation -= 1
-                    evaluation -= 0.1*(column + 1)
+                    evaluation -= 10
+                    evaluation -= column - 1
+
+            column -= 1
+
+
     analyzed += 1
-    return evaluation
+    return (evaluation * 0.1)
 
 def load_bar(iteration, total, prefix = '', suffix = '', decimals = 1, length = 50, fill = '#'):
     percent = ('{0:.' + str(decimals) + 'f}').format(100 * (iteration/float(total)))
     filledLength = int(length * iteration // total)
     bar = fill * filledLength + '.' * (length - filledLength)
-    print(f'\r{prefix} | {bar} | {percent} % {suffix}',end = '\r')
+    print(f'\r{prefix} | {bar} | {percent}% {suffix}',end = '\r')
     if iteration == total:
         print()
-
-#* Maybe important to get crital moves evaluiated first, to speed up the pruning in the min_max function.
-def get_legal_moves_sorted():
-    list = []
-    for move in legal_moves:
-        if board.is_capture(move):
-            list.append(str(move))
-    for move in legal_moves:
-        if not board.is_capture(move):
-            list.append(str(move))
-    return list
 
 #* Complicated stuff, dont trust this to actually do what it's supposed to do.
 def min_max(depth, initial_depth, move_count, alpha, beta):
@@ -203,13 +201,11 @@ def min_max(depth, initial_depth, move_count, alpha, beta):
 
     elif move_count % 2 == 0:
         max_eval = -float("inf") 
-        if legal_moves.count() != 0:
-            legal_moves_alt = get_legal_moves_sorted()
-            for index, move in enumerate(legal_moves_alt): 
+        if legal_moves:
+            for index, move in enumerate(legal_moves): 
                 if depth == initial_depth:
-                    load_bar(index + 1, len(legal_moves_alt), prefix = 'Progress:', suffix = 'Complete', length = 50) 
-                move = str(move)
-                board.push_san(move)
+                    load_bar(index + 1, legal_moves.count(), prefix = 'Progress:', suffix = 'Complete', length = 50) 
+                board.push(move)
                 eval = min_max(depth - 1, initial_depth, move_count + 1, alpha, beta)
                 alpha = max(alpha, eval)
 
@@ -231,22 +227,18 @@ def min_max(depth, initial_depth, move_count, alpha, beta):
             print("positions_ analyzed", analyzed)
             analyzed_final = analyzed
             analyzed = 0
-            try:
-                return (best_move, max_eval)
-            except:
-                return (move, max_eval)
+            return (str(best_move), max_eval)
+
         else: 
             return max_eval
 
     elif move_count % 2 == 1:
         min_eval = float("inf")
-        if legal_moves.count() != 0: 
-            legal_moves_alt = get_legal_moves_sorted()
-            for index, move in enumerate(legal_moves_alt):
+        if legal_moves: 
+            for index, move in enumerate(legal_moves):
                 if depth == initial_depth:
-                    load_bar(index + 1, len(legal_moves_alt), prefix = 'Progress:', suffix = 'Complete', length = 50) 
-                move = str(move)
-                board.push_san(move)
+                    load_bar(index + 1, legal_moves.count(), prefix = 'Progress:', suffix = 'Complete', length = 50) 
+                board.push(move)
                 eval = min_max(depth - 1, initial_depth, move_count + 1, alpha, beta)
                 beta = min(beta, eval)
 
@@ -261,34 +253,40 @@ def min_max(depth, initial_depth, move_count, alpha, beta):
                     board.pop()
                     return min_eval
                 board.pop() 
-        else: 
+        else:
             return evaluate_position(move_count)
 
         if depth == initial_depth:
             print("positions analyzed: ", analyzed)
             analyzed_final = analyzed
             analyzed = 0
-            try:
-                return (best_move, min_eval)
-            except:
-                return (move, min_eval)
+            return (str(best_move), min_eval)
 
         else:
             return min_eval
 
-#* Recursively finding the fastest way to a checkmate if thats necessairy, because otherwise it might find itself in an infinite loop in the endgame.
-def compute_move(move_count, depth, last_result):
+#* Maybe working
+def compute_move(move_count, depth):
 
     result = min_max(depth, depth, move_count, -float("inf"), float("inf"))
 
     if result[1] == float("inf") or result[1] == -float("inf"):
-        compute_move(move_count, depth - 1, result)
-
-    if not last_result:
-        return result
+        new_result = min_max(depth - 1, depth - 1, move_count, -float("inf"), float("inf"))
+        if new_result[1] == float("inf") or result[1] == -float("inf"):
+            new_result2 = min_max(depth - 2, depth - 2, move_count, -float("inf"), float("inf"))
+            if new_result2[1] == float("inf") or result[1] == -float("inf"):
+                new_result3 = min_max(depth - 3, depth - 3, move_count, -float("inf"), float("inf"))
+                if new_result3[1] == float("inf") or result[1] == -float("inf"):
+                    return new_result3
+                else:
+                    return new_result2
+            else:
+                return new_result
+        else:
+            return result
     else:
-        return last_result
-
+        return result
+        
 def main():
     global analyzed_final
     running = True
@@ -313,7 +311,7 @@ def main():
                     piece_at_square = str(board.piece_at(chess.parse_square(square1)))
 
                     if (piece_at_square == "P" and square2[1] == "8") or (piece_at_square == "p" and square2[1] == "1"):
-                        move = square1 + square2 + input("Promote pawn to: ")
+                        move = square1 + square2 + input("Promote pawn to: (lower case)")
                         if chess.Move.from_uci(move) in legal_moves:
                             board.push_uci(move)
                             draw_board()
@@ -332,9 +330,9 @@ def main():
             elif (white_is_computer and move_count % 2 == 0) or (black_is_computer and move_count % 2 == 1):
                 start = time.time()
                 if legal_moves.count() < 5:
-                    calculation_result = compute_move(move_count, 4, False)
+                    calculation_result = compute_move(move_count, 5)
                 else:
-                    calculation_result = compute_move(move_count, 5, False)
+                    calculation_result = compute_move(move_count, 5)
                 board.push_uci(calculation_result[0])
                 print("total time taken: ", time.time() - start)
                 print("positions calculated per second: ", math.floor(analyzed_final / (time.time() - start)))
