@@ -7,7 +7,7 @@ import math
 if True:
     pygame.init()
     window = pygame.display.set_mode([480,480])
-    board = chess.Board("3k4/1Q6/5K2/8/8/8/8/8 w - - 0 1")
+    board = chess.Board()
     legal_moves = board.legal_moves
     analyzed = 0
     analyzed_final = 0
@@ -16,7 +16,7 @@ if True:
     white = (235, 210, 180)
     square_size = 80
 
-    black_is_computer = False
+    black_is_computer = True
     white_is_computer = True
 
     white_pawn = pygame.image.load("PNG's/white-pawn.png")
@@ -88,13 +88,13 @@ def return_mouse_square(pos):
 
 #* First attempt at getting the enemy king closer to the edge of the board, for getting closer to checkmate in an endgame.
 def distance_from_center(row, column):
-    distX = abs(4 - row)
-    distY = abs(4 - column)
+    distX = abs(4 - row - 1)
+    distY = abs(4 - column - 1)
     distance = distX + distY
     return distance
 
 #* Is speeding this up possible?, intelligence should be easily extendible.
-def evaluate_position(move_count):
+def evaluate_position():
     if not legal_moves:
         outcome = board.outcome().result()
         if outcome == "1-0":
@@ -107,6 +107,7 @@ def evaluate_position(move_count):
     global analyzed
     global analyzed_final
     evaluation = 0
+    move_count = board.ply()
 
     list = create_list()
     for column, string in enumerate(list):
@@ -193,26 +194,26 @@ def load_bar(iteration, total, prefix = '', suffix = '', decimals = 1, length = 
         print()
 
 #* Complicated stuff, dont trust this to actually do what it's supposed to do.
-def min_max(depth, initial_depth, move_count, alpha, beta):
+def min_max(depth, initial_depth, alpha, beta):
     global analyzed
     global analyzed_final
     if depth == 0:
-        return evaluate_position(move_count)
+        return evaluate_position()
 
-    elif move_count % 2 == 0:
+    elif board.ply() % 2 == 0:
         max_eval = -float("inf") 
         if legal_moves:
             for index, move in enumerate(legal_moves): 
                 if depth == initial_depth:
                     load_bar(index + 1, legal_moves.count(), prefix = 'Progress:', suffix = 'Complete', length = 50) 
                 board.push(move)
-                eval = min_max(depth - 1, initial_depth, move_count + 1, alpha, beta)
+                eval = min_max(depth - 1, initial_depth, alpha, beta)
                 alpha = max(alpha, eval)
 
                 if eval > max_eval and depth != initial_depth: 
                     max_eval = eval
 
-                elif eval > max_eval and depth == initial_depth:
+                elif eval > max_eval:
                     max_eval = eval
                     best_move = move
 
@@ -221,7 +222,7 @@ def min_max(depth, initial_depth, move_count, alpha, beta):
                     return max_eval
                 board.pop()
         else:
-            return evaluate_position(move_count)
+            return evaluate_position()
 
         if depth == initial_depth:
             print("positions_ analyzed", analyzed)
@@ -232,20 +233,20 @@ def min_max(depth, initial_depth, move_count, alpha, beta):
         else: 
             return max_eval
 
-    elif move_count % 2 == 1:
+    elif board.ply() % 2 == 1:
         min_eval = float("inf")
         if legal_moves: 
             for index, move in enumerate(legal_moves):
                 if depth == initial_depth:
                     load_bar(index + 1, legal_moves.count(), prefix = 'Progress:', suffix = 'Complete', length = 50) 
                 board.push(move)
-                eval = min_max(depth - 1, initial_depth, move_count + 1, alpha, beta)
+                eval = min_max(depth - 1, initial_depth, alpha, beta)
                 beta = min(beta, eval)
 
                 if eval < min_eval and depth != initial_depth: 
                     min_eval = eval 
 
-                elif eval < min_eval and depth == initial_depth: 
+                elif eval < min_eval: 
                     min_eval = eval 
                     best_move = move
 
@@ -254,7 +255,7 @@ def min_max(depth, initial_depth, move_count, alpha, beta):
                     return min_eval
                 board.pop() 
         else:
-            return evaluate_position(move_count)
+            return evaluate_position()
 
         if depth == initial_depth:
             print("positions analyzed: ", analyzed)
@@ -266,16 +267,16 @@ def min_max(depth, initial_depth, move_count, alpha, beta):
             return min_eval
 
 #* Maybe working
-def compute_move(move_count, depth):
+def compute_move(depth):
 
-    result = min_max(depth, depth, move_count, -float("inf"), float("inf"))
+    result = min_max(depth, depth, -float("inf"), float("inf"))
 
     if result[1] == float("inf") or result[1] == -float("inf"):
-        new_result = min_max(depth - 1, depth - 1, move_count, -float("inf"), float("inf"))
+        new_result = min_max(depth - 1, depth - 1 -float("inf"), float("inf"))
         if new_result[1] == float("inf") or result[1] == -float("inf"):
-            new_result2 = min_max(depth - 2, depth - 2, move_count, -float("inf"), float("inf"))
+            new_result2 = min_max(depth - 2, depth - 2 -float("inf"), float("inf"))
             if new_result2[1] == float("inf") or result[1] == -float("inf"):
-                new_result3 = min_max(depth - 3, depth - 3, move_count, -float("inf"), float("inf"))
+                new_result3 = min_max(depth - 3, depth - 3 -float("inf"), float("inf"))
                 if new_result3[1] == float("inf") or result[1] == -float("inf"):
                     return new_result3
                 else:
@@ -330,9 +331,9 @@ def main():
             elif (white_is_computer and move_count % 2 == 0) or (black_is_computer and move_count % 2 == 1):
                 start = time.time()
                 if legal_moves.count() < 5:
-                    calculation_result = compute_move(move_count, 5)
+                    calculation_result = compute_move(5)
                 else:
-                    calculation_result = compute_move(move_count, 5)
+                    calculation_result = compute_move(5)
                 board.push_uci(calculation_result[0])
                 print("total time taken: ", time.time() - start)
                 print("positions calculated per second: ", math.floor(analyzed_final / (time.time() - start)))
