@@ -1,7 +1,8 @@
 import time
-import chess
+import chess, chess.polyglot
 import pygame, pygame.locals
 import math
+from functools import cache
 
 #* If statement for cleanliness in vscode.
 if True:
@@ -9,6 +10,7 @@ if True:
     window = pygame.display.set_mode([480,480])
     board = chess.Board()
     legal_moves = board.legal_moves
+    legal_captures = board.generate_legal_captures()
     analyzed = 0
     analyzed_final = 0
 
@@ -79,7 +81,7 @@ def draw_pieces():
     pygame.display.flip()
 
 def create_list():
-    return str(board).replace(" ", "").split("\n") 
+    return str(board).replace(" ", "").split("\n")
 
 def return_mouse_square(pos):
     part1 = chr(97 + math.floor(pos[0]/60))
@@ -88,13 +90,14 @@ def return_mouse_square(pos):
 
 #* First attempt at getting the enemy king closer to the edge of the board, for getting closer to checkmate in an endgame.
 def distance_from_center(row, column):
-    distX = abs(4 - row - 1)
-    distY = abs(4 - column - 1)
+    distX = abs(4.5 - row)
+    distY = abs(4.5 - column)
     distance = distX + distY
     return distance
 
 #* Is speeding this up possible?, intelligence should be easily extendible.
-def evaluate_position():
+@cache
+def evaluate_position(_):
     if not legal_moves:
         outcome = board.outcome().result()
         if outcome == "1-0":
@@ -104,8 +107,6 @@ def evaluate_position():
         else:
             return 0.0
 
-    global analyzed
-    global analyzed_final
     evaluation = 0
     move_count = board.ply()
 
@@ -140,7 +141,7 @@ def evaluate_position():
 
                 case "Q":
                     evaluation += 90
-                    if move_count > 5:
+                    if move_count > 10:
                         evaluation += 8 - column
 
                 case "P":
@@ -172,7 +173,7 @@ def evaluate_position():
 
                 case "q":
                     evaluation -= 90
-                    if move_count > 5:
+                    if move_count > 10:
                         evaluation -= column - 1
 
                 case "p":
@@ -180,9 +181,6 @@ def evaluate_position():
                     evaluation -= column - 1
 
             column -= 1
-
-
-    analyzed += 1
     return (evaluation * 0.1)
 
 def load_bar(iteration, total, prefix = '', suffix = '', decimals = 1, length = 50, fill = '#'):
@@ -197,11 +195,14 @@ def load_bar(iteration, total, prefix = '', suffix = '', decimals = 1, length = 
 def min_max(depth, initial_depth, alpha, beta):
     global analyzed
     global analyzed_final
-    if depth == 0:
-        return evaluate_position()
+
+    if depth <= 0:
+        zobrist = chess.polyglot.zobrist_hash(board)
+        analyzed += 1
+        return evaluate_position(zobrist)
 
     elif board.ply() % 2 == 0:
-        max_eval = -float("inf") 
+        max_eval = -float("inf")
         if legal_moves:
             for index, move in enumerate(legal_moves): 
                 if depth == initial_depth:
@@ -217,12 +218,15 @@ def min_max(depth, initial_depth, alpha, beta):
                     max_eval = eval
                     best_move = move
 
-                if beta <= alpha:
+                if beta <= alpha and depth != initial_depth:
                     board.pop()
                     return max_eval
                 board.pop()
         else:
-            return evaluate_position()
+            zobrist = chess.polyglot.zobrist_hash(board)
+            analyzed += 1
+            result = evaluate_position(zobrist)
+            return result
 
         if depth == initial_depth:
             print("positions_ analyzed", analyzed)
@@ -230,8 +234,9 @@ def min_max(depth, initial_depth, alpha, beta):
             analyzed = 0
             return (str(best_move), max_eval)
 
-        else: 
+        else:
             return max_eval
+
 
     elif board.ply() % 2 == 1:
         min_eval = float("inf")
@@ -250,12 +255,15 @@ def min_max(depth, initial_depth, alpha, beta):
                     min_eval = eval 
                     best_move = move
 
-                if beta <= alpha:
+                if beta <= alpha and depth != initial_depth:
                     board.pop()
                     return min_eval
                 board.pop() 
         else:
-            return evaluate_position()
+            zobrist = chess.polyglot.zobrist_hash(board)
+            analyzed += 1
+            result = evaluate_position(zobrist)
+            return result
 
         if depth == initial_depth:
             print("positions analyzed: ", analyzed)
@@ -272,11 +280,11 @@ def compute_move(depth):
     result = min_max(depth, depth, -float("inf"), float("inf"))
 
     if result[1] == float("inf") or result[1] == -float("inf"):
-        new_result = min_max(depth - 1, depth - 1 -float("inf"), float("inf"))
+        new_result = min_max(depth - 1, depth - 1, -float("inf"), float("inf"))
         if new_result[1] == float("inf") or result[1] == -float("inf"):
-            new_result2 = min_max(depth - 2, depth - 2 -float("inf"), float("inf"))
+            new_result2 = min_max(depth - 2, depth - 2, -float("inf"), float("inf"))
             if new_result2[1] == float("inf") or result[1] == -float("inf"):
-                new_result3 = min_max(depth - 3, depth - 3 -float("inf"), float("inf"))
+                new_result3 = min_max(depth - 3, depth - 3, -float("inf"), float("inf"))
                 if new_result3[1] == float("inf") or result[1] == -float("inf"):
                     return new_result3
                 else:
@@ -329,14 +337,17 @@ def main():
                     waiting = False
 
             elif (white_is_computer and move_count % 2 == 0) or (black_is_computer and move_count % 2 == 1):
-                start = time.time()
+                start = time.perf_counter()
                 if legal_moves.count() < 5:
-                    calculation_result = compute_move(5)
+                    calculation_result = compute_move(6)
+                elif legal_moves.count() > 30:
+                    calculation_result = compute_move(4)
                 else:
                     calculation_result = compute_move(5)
+
                 board.push_uci(calculation_result[0])
-                print("total time taken: ", time.time() - start)
-                print("positions calculated per second: ", math.floor(analyzed_final / (time.time() - start)))
+                print("total time taken: ", time.perf_counter() - start)
+                print("positions calculated per second: ", math.floor(analyzed_final / (time.perf_counter() - start)))
                 print("evaluation: ", calculation_result[1])
 
                 draw_board()
