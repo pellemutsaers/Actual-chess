@@ -100,9 +100,9 @@ def evaluate_position(_):
     if not legal_moves:
         outcome = board.outcome().result()
         if outcome == "1-0":
-            return float("inf")
+            return 100
         elif outcome == "0-1":
-            return -float("inf")
+            return -100
         else:
             return 0.0
 
