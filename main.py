@@ -4,11 +4,11 @@ import pygame, pygame.locals
 import math
 from functools import cache
 
-#* If statement for cleanliness in vscode.
+#! If statement for cleanliness in vscode. !!!!!!GLOBALS WARNING :) !!!!!!
 if True:
     pygame.init()
     window = pygame.display.set_mode([480,480])
-    board = chess.Board()
+    board = chess.Board("8/8/8/4Q3/4K2k/8/8/8 w - - 0 1")
     legal_moves = board.legal_moves
     legal_captures = board.generate_legal_captures()
     analyzed = 0
@@ -19,7 +19,7 @@ if True:
     square_size = 80
 
     black_is_computer = True
-    white_is_computer = True
+    white_is_computer = False
 
     white_pawn = pygame.image.load("PNG's/white-pawn.png")
     white_rook = pygame.image.load("PNG's/white-rook.png")
@@ -88,14 +88,13 @@ def return_mouse_square(pos):
     part2 = str(8 - math.floor(pos[1]/60))
     return part1 + part2
 
-#* First attempt at getting the enemy king closer to the edge of the board, for getting closer to checkmate in an endgame.
+#* First attempt at getting the enemy king closer to the edge of the board, for getting closer to checkmate in an endgame, idk about this.
 def distance_from_center(row, column):
     distX = abs(4.5 - row)
     distY = abs(4.5 - column)
     distance = distX + distY
     return distance
 
-#* Is speeding this up possible?, intelligence should be easily extendible.
 @cache
 def evaluate_position(_):
     if not legal_moves:
@@ -274,18 +273,18 @@ def min_max(depth, initial_depth, alpha, beta):
         else:
             return min_eval
 
-#* Maybe working
+#* Maybe working, probably not. Issue could be here.
 def compute_move(depth):
 
     result = min_max(depth, depth, -float("inf"), float("inf"))
 
-    if result[1] == float("inf") or result[1] == -float("inf"):
+    if (result[1] == float("inf") or result[1] == -float("inf")) and depth != 1:
         new_result = min_max(depth - 1, depth - 1, -float("inf"), float("inf"))
-        if new_result[1] == float("inf") or result[1] == -float("inf"):
+        if (new_result[1] == float("inf") or result[1] == -float("inf")) and depth != 1:
             new_result2 = min_max(depth - 2, depth - 2, -float("inf"), float("inf"))
-            if new_result2[1] == float("inf") or result[1] == -float("inf"):
+            if (new_result2[1] == float("inf") or result[1] == -float("inf")) and depth != 1:
                 new_result3 = min_max(depth - 3, depth - 3, -float("inf"), float("inf"))
-                if new_result3[1] == float("inf") or result[1] == -float("inf"):
+                if (new_result3[1] == float("inf") or result[1] == -float("inf")) and depth != 1:
                     return new_result3
                 else:
                     return new_result2
