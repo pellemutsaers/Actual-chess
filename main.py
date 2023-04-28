@@ -4,11 +4,14 @@ import pygame, pygame.locals
 import math
 from functools import cache
 
+ENDGAME_EXAMPLE = "8/8/8/4Q3/4K2k/8/8/8 w - - 0 1"
+
+
 #! If statement for cleanliness in vscode. !!!!!!GLOBALS WARNING :) !!!!!!
 if True:
     pygame.init()
     window = pygame.display.set_mode([480,480])
-    board = chess.Board("8/8/8/4Q3/4K2k/8/8/8 w - - 0 1")
+    board = chess.Board()
     legal_moves = board.legal_moves
     legal_captures = board.generate_legal_captures()
     analyzed = 0
