@@ -14,7 +14,7 @@ from Engine import best_move
 
 #-----------------------TOKEN-BELOW-------------------------
 if True:
-    token_hider = str('String goes here')
+    token_hider = str('Token goes here')
     TOKEN = token_hider
 
 load_dotenv()
@@ -277,7 +277,7 @@ class Game():
     async def make_engine_move(self) -> bool:
         engine_move, evaluation, message = await self._engine_move()
         if message:
-            await self._say(message)
+            self._say(message)
         await self._say(f"{self.board.san(engine_move)}, eval: {evaluation}")
         self._push(engine_move)
 
