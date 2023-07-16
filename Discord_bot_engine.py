@@ -30,6 +30,7 @@ ENGINE_BEST_MOVE = best_move
 board = 0
 visual = True
 slash_toggle = False
+opponent_name = "reserved_opponent_name"
 
 
 #----------------------GAME-ENCODING-----------------------
@@ -321,6 +322,7 @@ async def on_message(message):
     global board
     global slash_toggle
     global visual
+    global opponent_name
     if message.author == client.user:
         return
 
@@ -331,8 +333,10 @@ async def on_message(message):
         if ENGINE_NAME in m:
             visual = False
             if m.startswith(f'\start auto game {ENGINE_NAME}'):
+                opponent_name = m[17:].split(" - ")[1]
                 board = Game(message.channel, engine=True, trunc_messages=True)
             else:
+                opponent_name = m[17:].split(" - ")[0]
                 board = Game(message.channel, engine=False, trunc_messages=True)
     # elif m.startswith('\start game'):
     #     board = Game(message.channel, engine=None)
@@ -365,6 +369,8 @@ async def on_message(message):
             await board.make_engine_move()
         if visual:
             await board.show()
+    elif m.startswith(opponent_name):
+        await board.make_move(m[len(opponent_name)+2:].split(" ")[0])
     else:
         if slash_toggle:
             successful = await board.make_move(message.content)

@@ -9,7 +9,7 @@ import svgrasterize
 
 from dotenv import load_dotenv
 from datetime import datetime
-from Engine import best_move
+from Engine import best_move, GetStockFishEval
 
 
 #-----------------------TOKEN-BELOW-------------------------
@@ -31,6 +31,7 @@ visual = True
 slash_toggle = False
 bot_game = False
 bot_names = ["reserved_name1", "reserved_name2"]
+bot_guesses = {}
 
 
 #----------------------GAME-ENCODING-----------------------
@@ -147,6 +148,25 @@ def FinalizeGame(board: chess.BoardT,
             case 7:
                 final_game.headers["Termination"] = f"draw by threefold repetition"
     return final_game
+
+def parse_move(self, board: chess.Board, move: str) -> bool:
+        if not move:
+            return False
+        
+        legal_moves = [board.san(i) for i in board.legal_moves]
+
+        # parsing forced moves
+        if len(legal_moves) == 1:
+            return legal_moves[0]
+
+        # parsing move (if perfect or of by one)
+        if new_move := one_move_in(move, legal_moves):
+            return new_move
+        
+        # parsing move (if move is all lowercase)
+        if new_move := capt_move_in(move, legal_moves):
+            return new_move
+        return False
 
 class Game():
     def __init__(self, 
@@ -323,6 +343,7 @@ async def on_message(message):
     global slash_toggle
     global bot_game
     global bot_names
+    global bot_guesses
     global visual
     if message.author == client.user:
         return
@@ -334,7 +355,7 @@ async def on_message(message):
     if m('\start auto game') and not bot_game:
         board = Game(message.channel, engine=None)
         bot_game = True
-        bot_names = mc[16:].split(" - ") if " - " in mc else s("Incorrect format, retry")
+        bot_names = mc[17:].split(" - ") if " - " in mc else s("Incorrect format, retry")
     elif m('\start game') and not bot_game:
         board = Game(message.channel, engine=None)
         await s('Game setup in normal position!')
@@ -344,6 +365,12 @@ async def on_message(message):
         board.game_done = True
         if visual:
             await board.show()
+        board: Game = 0
+        visual = True
+        slash_toggle = False
+        bot_game = False
+        bot_names = ["reserved_name1", "reserved_name2"]
+        bot_guesses = {}
     elif m('\\toggle') and not bot_game:
         slash_toggle = not slash_toggle
     elif m('\\resign') and not bot_game:
@@ -364,6 +391,18 @@ async def on_message(message):
             await board.make_engine_move()
         if visual:
             await board.show()
+    elif m('~') and bot_game:
+        board_copy = board.board.copy()
+        if move := parse_move(board_copy, mc[1:]):
+            board_copy.push(move)
+        else:
+            s("Illegal move guess")
+            return None
+        eval_diff = abs(GetStockFishEval(board.board, time=0.1) - GetStockFishEval(board_copy, time=0.1))
+        if message.author.name in bot_guesses:
+            bot_guesses[message.author.name] += eval_diff
+        else:
+            bot_guesses[message.author.name] = eval_diff
     else:
         if slash_toggle and not bot_game:
             successful = await board.make_move(message.content)
