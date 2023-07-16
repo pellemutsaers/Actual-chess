@@ -12,6 +12,7 @@ from datetime import datetime
 from Engine import best_move
 
 
+ENGINE_NAME = "OTTOchess"
 #-----------------------TOKEN-BELOW-------------------------
 if True:
     token_hider = str('Token goes here')
@@ -27,6 +28,7 @@ PIECE_NAMES = FULLOUT_PIECES_CAP + FULLOUT_PIECES + SHORT_PIECES_CAP + SHORT_PIE
 
 ENGINE_BEST_MOVE = best_move 
 board = 0
+visual = True
 slash_toggle = False
 
 
@@ -153,6 +155,7 @@ class Game():
                  players: tuple[str] = ("white", "black"), 
                  engine: bool = False, 
                  trunc_messages: bool = True,
+                 talkative: bool = True,
                  async_engine: bool = False
                  ) -> None:
         self.channel = channel
@@ -166,13 +169,11 @@ class Game():
         self.recapture = recapture
         self.message_history = []
         self.trunc_messages = trunc_messages
-        if fen:
-            self.board = chess.Board(fen)
-        else:
-            self.board = chess.Board()
+        self.talkative = talkative
+        self.board = chess.Board(fen) if fen else chess.Board()
 
-        # if engine:
-        #     self.make_engine_move()
+        if engine:
+            self.make_engine_move()
 
     def _get_legal_sans(self) -> list:
         return [self.board.san(i) for i in self.board.legal_moves]
@@ -244,8 +245,9 @@ class Game():
                         await self._raise(f"Error: recapture has {new_options.bit_count()} candidates")
         return False
 
-    async def _say(self, message: str) -> None:
-        await self.channel.send(message)
+    async def _say(self, message: str, forced: bool = False) -> None:
+        if self.talkative or forced:
+            await self.channel.send(message)
 
     async def _raise(self, error: str) -> None:
         await self.channel.send(error, delete_after=10)
@@ -278,7 +280,7 @@ class Game():
         engine_move, evaluation, message = await self._engine_move()
         if message:
             self._say(message)
-        await self._say(f"{self.board.san(engine_move)}, eval: {evaluation}")
+        await self._say(f"{ENGINE_NAME}: {self.board.san(engine_move)}, eval: {evaluation}", forced=True)
         self._push(engine_move)
 
     async def make_move(self, move: str) -> bool:
@@ -299,7 +301,7 @@ class Game():
         img_message = await self.channel.send(file=discord.File(f"{self.file_name}.png"))
         self.message_history.insert(0, img_message)
         if self.trunc_messages:
-            await self.manage_messages(1)
+            await self.manage_messages(2)
 
     async def manage_messages(self, amount_allowed: int) -> None:
         while len(self.message_history) > amount_allowed:
@@ -318,40 +320,58 @@ async def on_ready():
 async def on_message(message):
     global board
     global slash_toggle
+    global visual
     if message.author == client.user:
         return
 
-    m = message.content.startswith
+    m = message.content
     s = message.channel.send
 
-    if m('\start game'):
+    if m.startswith('\start auto game'):
+        if ENGINE_NAME in m:
+            visual = False
+            if m.startswith(f'\start auto game {ENGINE_NAME}'):
+                board = Game(message.channel, engine=True, trunc_messages=True)
+            else:
+                board = Game(message.channel, engine=False, trunc_messages=True)
+    # elif m.startswith('\start game'):
+    #     board = Game(message.channel, engine=None)
+    #     await s('Game setup in normal position!')
+    #     await board.show()
+    elif m.startswith('\play engine'):
+        board = Game(message.channel, engine=False)
         await s('Game setup in normal position!')
-        board = Game(message.channel, engine=None)
         await board.show()
-    elif m('\play engine'):
-        await s('Game setup in normal position!')
+    elif m.startswith('\play engine white'):
+        board = Game(message.channel, engine=True)
+        await board.show()
+    elif m.startswith('\play engine black'):
         board = Game(message.channel, engine=False)
         await board.show()
-    elif m('\\end game'):
+    elif m.startswith('\\end game'):
         await s('Game ended')
         board.game_done = True
-        await board.show()
-    elif m('\\toggle'):
+        if visual:
+            await board.show()
+    elif m.startswith('\\toggle'):
         slash_toggle = not slash_toggle
-    elif m('\\resign'):
+    elif m.startswith('\\resign'):
         await board.resign()
-        await board.show()
-    elif m('\\'):
+        if visual:
+            await board.show()
+    elif m.startswith('\\'):
         successful = await board.make_move(message.content[1:])
         if board.with_engine != None and successful: 
-                await board.make_engine_move()
-        await board.show()
+            await board.make_engine_move()
+        if visual:
+            await board.show()
     else:
         if slash_toggle:
             successful = await board.make_move(message.content)
             if board.with_engine != None and successful: 
-                    await board.make_engine_move()
-            await board.show()
+                await board.make_engine_move()
+            if visual:
+                await board.show()
         
 
 #--------------------------MAIN-----------------------------

@@ -14,7 +14,7 @@ from Engine import best_move
 
 #-----------------------TOKEN-BELOW-------------------------
 if True:
-    token_hider = str('String goes here')
+    token_hider = str('Token goes here')
     TOKEN = token_hider
 
 load_dotenv()
@@ -26,8 +26,11 @@ SHORT_PIECES = ["p", "n", "b", "r", "q", "k"]
 PIECE_NAMES = FULLOUT_PIECES_CAP + FULLOUT_PIECES + SHORT_PIECES_CAP + SHORT_PIECES
 
 ENGINE_BEST_MOVE = best_move 
-board = 0
+board: Game = 0
+visual = True
 slash_toggle = False
+bot_game = False
+bot_names = ["reserved_name1", "reserved_name2"]
 
 
 #----------------------GAME-ENCODING-----------------------
@@ -166,10 +169,7 @@ class Game():
         self.recapture = recapture
         self.message_history = []
         self.trunc_messages = trunc_messages
-        if fen:
-            self.board = chess.Board(fen)
-        else:
-            self.board = chess.Board()
+        self.board = chess.Board(fen) if fen else chess.Board()
 
         # if engine:
         #     self.make_engine_move()
@@ -277,7 +277,7 @@ class Game():
     async def make_engine_move(self) -> bool:
         engine_move, evaluation, message = await self._engine_move()
         if message:
-            await self._say(message)
+            self._say(message)
         await self._say(f"{self.board.san(engine_move)}, eval: {evaluation}")
         self._push(engine_move)
 
@@ -293,6 +293,9 @@ class Game():
 
     async def say_pgn(self) -> None:
         await self._say(str(self.game_node.game()))
+
+    async def say_fen(self) -> None:
+        await self._say(self.board.fen())
 
     async def show(self) -> None:
         WriteBoardPng(self.board, self.file_name)
@@ -318,40 +321,56 @@ async def on_ready():
 async def on_message(message):
     global board
     global slash_toggle
+    global bot_game
+    global bot_names
+    global visual
     if message.author == client.user:
         return
 
+    mc = message.content
     m = message.content.startswith
     s = message.channel.send
 
-    if m('\start game'):
-        await s('Game setup in normal position!')
+    if m('\start auto game') and not bot_game:
         board = Game(message.channel, engine=None)
-        await board.show()
-    elif m('\play engine'):
+        bot_game = True
+        bot_names = mc[16:].split(" - ") if " - " in mc else s("Incorrect format, retry")
+    elif m('\start game') and not bot_game:
+        board = Game(message.channel, engine=None)
         await s('Game setup in normal position!')
-        board = Game(message.channel, engine=False)
         await board.show()
     elif m('\\end game'):
         await s('Game ended')
         board.game_done = True
-        await board.show()
-    elif m('\\toggle'):
+        if visual:
+            await board.show()
+    elif m('\\toggle') and not bot_game:
         slash_toggle = not slash_toggle
-    elif m('\\resign'):
+    elif m('\\resign') and not bot_game:
         await board.resign()
-        await board.show()
-    elif m('\\'):
+        if visual:
+            await board.show()
+    elif m('\\pgn'):
+        await board.say_pgn()
+    elif m('\\fen'):
+        await board.say_fen()
+    elif m(bot_names[0]):
+        await board.make_move(mc[len(bot_names[0])+2:].split(" ")[0])
+    elif m(bot_names[1]):
+        await board.make_move(mc[len(bot_names[1])+2:].split(" ")[0])
+    elif m('\\') and not bot_game:
         successful = await board.make_move(message.content[1:])
         if board.with_engine != None and successful: 
-                await board.make_engine_move()
-        await board.show()
+            await board.make_engine_move()
+        if visual:
+            await board.show()
     else:
-        if slash_toggle:
+        if slash_toggle and not bot_game:
             successful = await board.make_move(message.content)
             if board.with_engine != None and successful: 
-                    await board.make_engine_move()
-            await board.show()
+                await board.make_engine_move()
+            if visual:
+                await board.show()
         
 
 #--------------------------MAIN-----------------------------
